@@ -11,32 +11,37 @@ const port = process.env.PORT || 3000;
 app.use(cookieParser());
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: ["http://localhost:5173"],
     credentials: true,
   })
 );
 
-app.use(express.json());
-
-const logger = (req, res, next) => {
-  console.log("inside the logger");
-  next();
-};
 const verifyToken = (req, res, next) => {
-  console.log("inside verify token middleware", req.cookies);
-  const token = req?.cookies?.token;
+  const token = req.cookies?.token;
   if (!token) {
-    return res.status(401).send({ message: "Unauthorized access!" });
+    res.status(401).send({ message: "Unauthorized access!" });
   }
-
+  // verify the token
   jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
     if (err) {
-      return res.status(401).send({ message: "Uuthorized access " });
+      return res.status(401).send({ message: "UnAuthorized access!" });
     }
     req.user = decoded;
     next();
   });
 };
+app.post("/logout", (req, res) => {
+  res
+    .clearCookie("token", {
+      httpOnly: true,
+      secure: false,
+    })
+    .send({ success: true });
+});
+
+app.use(express.json());
+
+// Middleware function
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@coffeestore.vf4l8z4.mongodb.net/?retryWrites=true&w=majority&appName=coffeeStore`;
 
@@ -60,10 +65,10 @@ async function run() {
       .collection("job_applications");
 
     // auth related apis
-    app.post("/jwt", async (req, res) => {
+    app.post("/jwt", (req, res) => {
       const user = req.body;
       const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
-        expiresIn: "1h",
+        expiresIn: "5h",
       });
       res
         .cookie("token", token, {
@@ -79,6 +84,12 @@ async function run() {
       if (!email)
         return res.status(400).send({ error: "Email query required" });
       const query = { applicant_email: email };
+
+      console.log(req.cookies?.token);
+      //token email !== query email
+      if (req.user.email !== req.query.email) {
+        return res.status(403).send({ message: "forbidden access" });
+      }
 
       const applications = await jobApplicationCollection.find(query).toArray();
 
@@ -135,8 +146,7 @@ async function run() {
       res.send(result);
     });
     // jobs related api's...
-    app.get("/jobs", logger, async (req, res) => {
-      console.log("now inside api callback");
+    app.get("/jobs", async (req, res) => {
       const email = req.query.email;
       let query = {};
       if (email) {

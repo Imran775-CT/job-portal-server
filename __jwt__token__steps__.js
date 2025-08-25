@@ -22,5 +22,49 @@
  *          if not valid: logout
  * 
  * 
+ * jwt===============================>...
  * 
- */
+ -----------------------------------------
+1.   install jsonwebtoken cookie paerser 
+2.   install cookie-parser
+
+3.       const jwt = require('jsonwebtoken')
+4.       const cookieParser = require('cookie-parser')
+5.      app.use(cookieParser())
+6.       
+
+  a,   create a token
+  b.    
+       jwt.sign(data, sectet, {expiresIn: '5h'})
+       set token to the cookie of res.cookies('token', token, {
+       httpOnly: true,
+       secure: false
+       })
+
+       cors({
+       origin: ['],
+       credentials: true})                   //server side
+
+
+       client: {
+       withCredentials: true}
+
+
+
+       send the token to the client side. make sure  token is in the cookie(application).
+
+
+       3. 
+       
+
+
+
+
+
+       npi i axios
+
+
+
+
+
+ */ 
